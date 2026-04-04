@@ -1,0 +1,16 @@
+# Compiled Java classes
+target/
+*.class
+
+# IDE specific files (Eclipse/IntelliJ)
+.settings/
+.classpath
+.project
+.idea/
+*.iml
+
+# Environment variables (Secrets)
+.env
+
+# Maven wrapper executable
+.mvn/
