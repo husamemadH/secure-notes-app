@@ -21,7 +21,3 @@ It features a **React** frontend and a **Java (Spring Boot)** backend.
 2. Install dependencies: `npm install`
 3. Start the development server: `npm start`
 
-## 🔐 Security Features
-* [ ] JWT Authentication (Planned/Implemented)
-* [ ] Password Hashing with BCrypt
-* [ ] Input Validation to prevent XSS
