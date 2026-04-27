@@ -78,9 +78,8 @@ const Login = () => {
         );
       }
     } catch (error) {
-      if (error) {
-        toast.error("Invalid credentials");
-      }
+      const message = error?.response?.data?.message;
+      toast.error(message || "Invalid credentials");
     } finally {
       setLoading(false);
     }

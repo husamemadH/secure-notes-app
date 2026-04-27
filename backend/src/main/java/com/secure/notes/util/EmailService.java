@@ -14,14 +14,25 @@ public class EmailService {
 	
 	
 	public void sendPasswordResetEmail(String to , String resetUrl ) {
-		
+
 		SimpleMailMessage message = new SimpleMailMessage();
-		
+
 		message.setTo(to);
 		message.setSubject("Secure Notes Password Reset Request");
 		message.setText("Click the link to reset your password: " + resetUrl);
 		mailSender.send(message);
-		
-		
+
+
+	}
+
+	public void sendVerificationEmail(String to, String verifyUrl) {
+
+		SimpleMailMessage message = new SimpleMailMessage();
+
+		message.setTo(to);
+		message.setSubject("Secure Notes - Verify Your Email");
+		message.setText("Click the link to verify your email address: " + verifyUrl);
+		mailSender.send(message);
+
 	}
 }

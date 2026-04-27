@@ -71,19 +71,50 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
 	public void resetPassword(String token, String newPassword) {
-		 
+
 		ResetToken resetToken = resetTokenRepository.findByToken(token).orElseThrow(() -> new RuntimeException("Token doesnt exist"));
-		
+
 		if(resetToken.isUsed() || resetToken.getExpiryDate().isBefore(Instant.now())) {
 			throw new RuntimeException("token already used or expired");
 		}
-		
+
 		User user = resetToken.getUser();
 		user.setPassword(passwordEncoder.encode(newPassword));
 		resetToken.setUsed(true);
 		userRepository.save(user);
 		resetTokenRepository.save(resetToken);
- 
+
 	}
- 
+
+	public void generateVerificationToken(String email) {
+
+		User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+
+		String token = UUID.randomUUID().toString();
+
+		Instant expiryDate = Instant.now().plus(24, ChronoUnit.HOURS);
+
+		ResetToken verificationToken = new ResetToken(token, expiryDate, user);
+		resetTokenRepository.save(verificationToken);
+
+		String verifyUrl = frontendUrl + "/verify-email?token=" + token;
+		emailService.sendVerificationEmail(email, verifyUrl);
+	}
+
+	public void verifyEmail(String token) {
+
+		ResetToken verificationToken = resetTokenRepository.findByToken(token)
+				.orElseThrow(() -> new RuntimeException("Token doesn't exist"));
+
+		if (verificationToken.isUsed() || verificationToken.getExpiryDate().isBefore(Instant.now())) {
+			throw new RuntimeException("Token already used or expired");
+		}
+
+		User user = verificationToken.getUser();
+		user.setEnabled(true);
+		verificationToken.setUsed(true);
+		userRepository.save(user);
+		resetTokenRepository.save(verificationToken);
+	}
+
 }

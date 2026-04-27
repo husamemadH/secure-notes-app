@@ -25,16 +25,18 @@ public class UserDetailsImpl implements UserDetails {
     private String password;
 
     private boolean is2faEnabled;
+    private boolean enabled;
 
     private Collection<? extends GrantedAuthority> authorities;
 
     public UserDetailsImpl(Long id, String username, String email, String password,
-                           boolean is2faEnabled, Collection<? extends GrantedAuthority> authorities) {
+                           boolean is2faEnabled, boolean enabled, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.password = password;
         this.is2faEnabled = is2faEnabled;
+        this.enabled = enabled;
         this.authorities = authorities;
     }
 
@@ -47,7 +49,8 @@ public class UserDetailsImpl implements UserDetails {
                 user.getEmail(),
                 user.getPassword(),
                 user.isTwoFactorEnabled(),
-                List.of(authority) // Wrapping the single authority in a list
+                user.isEnabled(),
+                List.of(authority)
         );
     }
 
@@ -92,7 +95,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 
     public boolean is2faEnabled() {

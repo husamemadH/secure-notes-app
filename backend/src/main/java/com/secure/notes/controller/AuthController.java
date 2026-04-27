@@ -7,7 +7,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -73,6 +75,11 @@ public class AuthController {
 	        try {
 	            authentication = authenticationManager
 	                    .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+	        } catch (DisabledException exception) {
+	            Map<String, Object> map = new HashMap<>();
+	            map.put("message", "Account not verified. Please check your email and click the verification link.");
+	            map.put("status", false);
+	            return new ResponseEntity<Object>(map, HttpStatus.UNAUTHORIZED);
 	        } catch (AuthenticationException exception) {
 	            Map<String, Object> map = new HashMap<>();
 	            map.put("message", "Bad credentials");
@@ -104,23 +111,45 @@ public class AuthController {
 	    if (userRepository.existsByUserName(signUpRequest.getUsername()) || userRepository.existsByEmail(signUpRequest.getEmail())) {
 	        return ResponseEntity.badRequest().body(new MessageResponse("Error: Username or Email is already taken!"));
 	    }
-	    
-	    try 
-	    {
-	    User user = new User(signUpRequest.getUsername(), 
-	                         signUpRequest.getEmail(),
-	                         passwordEncoder.encode(signUpRequest.getPassword()));
 
-	    Role userRole = roleRepository.findByRoleName(AppRole.ROLE_USER).orElseThrow(() -> new RuntimeException("Role not found"));
-	    
-	    user.setRole(userRole);
-	    userRepository.save(user);
+	    try {
+	        User user = new User(signUpRequest.getUsername(),
+	                             signUpRequest.getEmail(),
+	                             passwordEncoder.encode(signUpRequest.getPassword()));
 
-	    return ResponseEntity.ok(new MessageResponse("User registered successfully!")); }
-	    catch (Exception e) {
-	    	e.printStackTrace();
-	    	return ResponseEntity.internalServerError().build();
+	        Role userRole = roleRepository.findByRoleName(AppRole.ROLE_USER)
+	                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+	        user.setRole(userRole);
+	        user.setEnabled(false);
+	        userRepository.save(user);
+
+	        try {
+	            userDetailsService.generateVerificationToken(signUpRequest.getEmail());
+	        } catch (Exception emailEx) {
+	            // Email failed — delete the saved user so they can retry registration
+	            userRepository.delete(user);
+	            emailEx.printStackTrace();
+	            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+	                    .body(new MessageResponse("Registration failed: could not send verification email. Please try again later."));
+	        }
+
+	        return ResponseEntity.ok(new MessageResponse("User registered successfully! Please check your email to verify your account."));
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.internalServerError()
+	                .body(new MessageResponse("Registration failed due to a server error. Please try again."));
 	    }
+	}
+
+	@GetMapping("/public/verify-email")
+	public ResponseEntity<?> verifyEmail(@RequestParam String token) {
+		try {
+			userDetailsService.verifyEmail(token);
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+		}
+		return ResponseEntity.ok().body(new MessageResponse("Email verified successfully! You can now log in."));
 	}
 	
 	@GetMapping("/user")

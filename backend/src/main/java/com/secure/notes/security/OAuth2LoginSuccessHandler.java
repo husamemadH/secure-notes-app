@@ -87,6 +87,7 @@ public class OAuth2LoginSuccessHandler extends SavedRequestAwareAuthenticationSu
                 email,
                 null,
                 false,
+                true,
                 principal.getAuthorities().stream()
                         .map(authority -> new SimpleGrantedAuthority(authority.getAuthority()))
                         .collect(Collectors.toList())

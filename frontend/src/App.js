@@ -18,6 +18,7 @@ import NotFound from "./components/NotFound";
 import ContactPage from "./components/contactPage/ContactPage";
 import AboutPage from "./components/aboutPage/AboutPage";
 import ResetPassword from "./components/Auth/ResetPassword";
+import VerifyEmail from "./components/Auth/VerifyEmail";
 import Footer from "./components/Footer/Footer";
 
 const App = () => {
@@ -33,6 +34,7 @@ const App = () => {
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
 
         <Route
           path="/notes/:id"

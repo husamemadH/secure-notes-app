@@ -7,7 +7,6 @@ import Divider from "@mui/material/Divider";
 import Buttons from "../../utils/Buttons";
 import InputField from "../InputField/InputField";
 import { useForm } from "react-hook-form";
-import toast from "react-hot-toast";
 import { useMyContext } from "../../store/ContextApi";
 import { useEffect } from "react";
 
@@ -15,6 +14,8 @@ const Signup = () => {
   const apiUrl = process.env.REACT_APP_API_URL;
   const [role, setRole] = useState();
   const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
+  const [serverError, setServerError] = useState("");
   // Access the token and setToken function using the useMyContext hook from the ContextProvider
   const { token } = useMyContext();
   const navigate = useNavigate();
@@ -50,24 +51,18 @@ const Signup = () => {
 
     try {
       setLoading(true);
-      const response = await api.post("/auth/public/signup", sendData);
-      toast.success("Reagister Successful");
+      setServerError("");
+      await api.post("/auth/public/signup", sendData);
       reset();
-      if (response.data) {
-        navigate("/login");
-      }
+      setRegistered(true);
     } catch (error) {
-      // Add an error programmatically by using the setError function provided by react-hook-form
-      //setError(keyword,message) => keyword means the name of the field where I want to show the error
-
-      if (
-        error?.response?.data?.message === "Error: Username is already taken!"
-      ) {
-        setError("username", { message: "username is already taken" });
-      } else if (
-        error?.response?.data?.message === "Error: Email is already in use!"
-      ) {
-        setError("email", { message: "Email is already in use" });
+      const message = error?.response?.data?.message || "";
+      if (message === "Error: Username or Email is already taken!") {
+        setError("username", { message: "Username or email is already taken" });
+      } else if (message) {
+        setServerError(message);
+      } else {
+        setServerError("Registration failed. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -78,6 +73,25 @@ const Signup = () => {
   useEffect(() => {
     if (token) navigate("/");
   }, [navigate, token]);
+
+  if (registered) {
+    return (
+      <div className="min-h-[calc(100vh-74px)] flex justify-center items-center">
+        <div className="sm:w-[450px] w-[360px] shadow-custom py-8 sm:px-8 px-4 text-center">
+          <h1 className="font-montserrat font-bold text-2xl mb-4">
+            Check Your Email
+          </h1>
+          <p className="text-slate-600 mb-6">
+            We sent a verification link to your email address. Please click it
+            to activate your account before logging in.
+          </p>
+          <Link className="underline hover:text-black text-sm" to="/login">
+            Back to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-74px)] flex justify-center items-center">
@@ -153,6 +167,9 @@ const Signup = () => {
             min={6}
           />
         </div>
+        {serverError && (
+          <p className="text-red-500 text-sm text-center mt-2">{serverError}</p>
+        )}
         <Buttons
           disabled={loading}
           onClickhandler={() => {}}
